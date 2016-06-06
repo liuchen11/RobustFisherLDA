@@ -1,4 +1,5 @@
 import random
+import math
 import numpy as np
 
 def divide(dataX, dataY, alpha):
@@ -40,3 +41,28 @@ def resample(dataX, dataY):
 		sampleY.append(dataY[chosen])
 
 	return [sampleX, sampleY]
+
+def split(dataX, dataY):
+	'''
+	divide the whole dataset into positive and negative ones
+	'''
+	instances = len(dataX)
+	positiveX = []
+	negativeX = []
+
+	for i in xrange(instances):
+		if dataY[i] == 1:
+			positiveX.append(dataX[i])
+		else:
+			negativeX.append(dataX[i])
+
+	return [positiveX, negativeX]
+
+def F_norm(matrix):
+	'''
+	calculate the Frobenius norm of a matrix i.e |vec(A)|_2
+	'''
+	squared = map(lambda x: x**2, matrix)
+	squared_sum = np.sum(squared)
+	return math.sqrt(squared_sum)
+
