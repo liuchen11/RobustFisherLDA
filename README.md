@@ -4,6 +4,8 @@ This is a collaborative project by [Chen LIU](http://liuchen1993.cn/HomePage/hom
 
 We use two datasets, both of which are from UCI. They are sonar(<a href="https://archive.ics.uci.edu/ml/machine-learning-databases/undocumented/connectionist-bench/sonar/sonar.all-data">LINK</a>) and ionosphere(<a href="https://archive.ics.uci.edu/ml/machine-learning-databases/ionosphere/ionosphere.data">LINK</a>)
 
+In addition, in order to solve the QCQP problem raised by robust LDA, we take advantage of the python library cvxopt and scipt writtern by <a href="http://pages.cs.wisc.edu/~kline/qcqp/qcqprel_py">Jeffery Kline</a>
+
 ## Code Structure
 ```
 |-load.py # load datas
