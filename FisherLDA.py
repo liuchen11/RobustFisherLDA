@@ -101,7 +101,7 @@ def transformToNewSpace(X, W, sample_no):
     return X_trans
 
 
-def plot_step_lda(X_trans, y, label_dict, uniqueClass):
+def plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset):
 
     ax = plt.subplot(111)
     for label,marker,color in zip(
@@ -120,7 +120,7 @@ def plot_step_lda(X_trans, y, label_dict, uniqueClass):
 
     leg = plt.legend(loc='upper right', fancybox=True)
     leg.get_frame().set_alpha(0.5)
-    plt.title('LDA: Iris projection onto the first 2 linear discriminants')
+    plt.title('LDA: {} data projection onto the first 2 linear discriminants'.format(dataset))
 
     # hide axis ticks
     plt.tick_params(axis="both", which="both", bottom="off", top="off",
@@ -136,9 +136,10 @@ def plot_step_lda(X_trans, y, label_dict, uniqueClass):
     plt.tight_layout
     plt.show()
 
-def main_test():
+def main_test(dataset='sonar'):
     # load data
-    load = loader('sonar/sonar.data')
+    path = dataset + '/' + dataset + '.data'
+    load = loader(path)
     [X, y] = load.load()
     feature_no = X.shape[1] # define the dimension
     sample_no = X.shape[0] # define the sample number
@@ -171,11 +172,11 @@ def main_test():
 
 
     # plot
-    plot_step_lda(X_trans, y, label_dict, uniqueClass)
+    plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset)
 
 
 
 
 if __name__ == "__main__":
-    main_test()
+    main_test('ionosphere')
 
