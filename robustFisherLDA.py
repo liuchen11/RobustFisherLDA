@@ -114,14 +114,35 @@ if __name__ == '__main__':
 		# k1 /= np.linalg.norm(k1)
 		# k2 /= np.linalg.norm(k2)
 		print  ('%.9f\t %.9f\t %.9f\t %.9f \t%.9f')% (util.M_norm(M0, x1 + pos_mean - x2 - neg_mean), np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)), util.M_norm(M1, x1), util.M_norm(M2, x2), util.F_norm(x1 + pos_mean - x2 - neg_mean))
-		if np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)) < 1e-4:
+		if np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)) < 5e-5:
 			break
 		k1_norm = util.M_norm(M1, k1)
 		k2_norm = util.M_norm(M2, k2)
 		x1 = k1 / k1_norm
 		x2 = k2 / k2_norm
 
-	w = np.dot(M0, x1 - x2)
+	w = np.dot(M0, x1 - x2).reshape(dimension)
+
+	train_pos_mean = np.mean(train_pos_X, axis = 0)
+	train_neg_mean = np.mean(train_neg_X, axis = 0)
+	threshold = np.dot(w, (train_pos_mean + train_neg_mean) / 2.0)
+	positive_lower = True if np.dot(train_pos_mean - train_neg_mean, w) > 0 else False
+
+	predict = np.zeros(len(testY))
+	testNum = len(testY)
+	for i in xrange(testNum):
+		value = np.dot(testX[i], w)
+		if value > threshold == positive_lower:
+			predict[i] = 1
+		else:
+			predict[i] = -1
+
+	rightNum = 0
+	for i in xrange(testNum):
+		if predict[i] == testY[i]:
+			rightNum += 1
+
+	print 'Right Radio: %.5f'% (float(rightNum)/float(testNum))
 
 
 

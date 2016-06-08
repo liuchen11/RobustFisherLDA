@@ -6,23 +6,32 @@ def divide(dataX, dataY, alpha):
 	'''
 	divide a dataset into two parts, usually training and testing set
 	'''
-	instances = len(dataX)
-	len1 = int(instances * alpha)
-	len2 = instances - len1
-	order = np.random.permutation(instances)
+	[positiveX, negativeX] = split(dataX, dataY)
+	posNum1 = int (len(positiveX) * alpha)
+	negNum1 = int (len(negativeX) * alpha)
+	posNum2 = len(positiveX) - posNum1
+	negNum2 = len(negativeX) - negNum1
+
+	posOrder = np.random.permutation(len(positiveX))
+	negOrder = np.random.permutation(len(negativeX))
 
 	dataX1 = []
 	dataY1 = []
 	dataX2 = []
 	dataY2 = []
 
-	for i in xrange(len1):
-		dataX1.append(dataX[order[i]])
-		dataY1.append(dataY[order[i]])
-
-	for i in xrange(len2):
-		dataX2.append(dataX[order[i + len1]])
-		dataY2.append(dataY[order[i + len1]])
+	for i in xrange(posNum1):
+		dataX1.append(positiveX[posOrder[i]])
+		dataY1.append(1)
+	for i in xrange(posNum2):
+		dataX2.append(positiveX[posOrder[i + posNum1]])
+		dataY2.append(1)
+	for i in xrange(negNum1):
+		dataX1.append(negativeX[negOrder[i]])
+		dataY1.append(-1)
+	for i in xrange(negNum2):
+		dataX2.append(negativeX[negOrder[i + negNum1]])
+		dataY2.append(-1)
 
 	return [dataX1, dataY1, dataX2, dataY2]
 
