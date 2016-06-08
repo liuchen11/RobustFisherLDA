@@ -51,16 +51,7 @@ def estimate(trainX, trainY, resample_num):
 	return [nominal_pos_mean, P_pos, nominal_neg_mean, P_neg,
 		nominal_pos_cov, rho_pos, nominal_neg_cov, rho_neg]
 
-if __name__ == '__main__':
-
-	if len(sys.argv)<3:
-		print 'Usage: python robustFisherLDA.py <dataFile> <alpha> (<resample_num>) (<split_token>)'
-		exit(0)
-
-	data_file = sys.argv[1]
-	alpha = float(sys.argv[2])
-	resample_num = int(sys.argv[3]) if len(sys.argv)>3 else 100
-	split_token = sys.argv[4] if len(sys.argv)>4 else ','
+def mainRobustFisherLDA(data_file, alpha, resample_num, split_token):
 
 	data_loader = load.loader(file_name = data_file, split_token = split_token)
 	[dataX, dataY] = data_loader.load()
@@ -111,17 +102,15 @@ if __name__ == '__main__':
 		k2_gradient = np.dot(k2_head, tail)
 		k1 -= k1_gradient * 0.01
 		k2 -= k2_gradient * 0.01
-		# k1 /= np.linalg.norm(k1)
-		# k2 /= np.linalg.norm(k2)
 		print  ('%.9f\t %.9f\t %.9f\t %.9f \t%.9f')% (util.M_norm(M0, x1 + pos_mean - x2 - neg_mean), np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)), util.M_norm(M1, x1), util.M_norm(M2, x2), util.F_norm(x1 + pos_mean - x2 - neg_mean))
-		if np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)) < 5e-5:
+		if np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)) < 1e-5:
 			break
 		k1_norm = util.M_norm(M1, k1)
 		k2_norm = util.M_norm(M2, k2)
 		x1 = k1 / k1_norm
 		x2 = k2 / k2_norm
 
-	w = np.dot(M0, x1 - x2).reshape(dimension)
+	w = np.dot(M0, x1 - x2 + pos_mean - neg_mean).reshape(dimension)
 
 	train_pos_mean = np.mean(train_pos_X, axis = 0)
 	train_neg_mean = np.mean(train_neg_X, axis = 0)
@@ -132,7 +121,7 @@ if __name__ == '__main__':
 	testNum = len(testY)
 	for i in xrange(testNum):
 		value = np.dot(testX[i], w)
-		if value > threshold == positive_lower:
+		if (value > threshold) == positive_lower:
 			predict[i] = 1
 		else:
 			predict[i] = -1
@@ -144,8 +133,18 @@ if __name__ == '__main__':
 
 	print 'Right Radio: %.5f'% (float(rightNum)/float(testNum))
 
+if __name__ == '__main__':
 
+	if len(sys.argv)<3:
+		print 'Usage: python robustFisherLDA.py <dataFile> <alpha> (<resample_num>) (<split_token>)'
+		exit(0)
 
+	data_file = sys.argv[1]
+	alpha = float(sys.argv[2])
+	resample_num = int(sys.argv[3]) if len(sys.argv)>3 else 100
+	split_token = sys.argv[4] if len(sys.argv)>4 else ','
+
+	mainRobustFisherLDA(data_file, alpha, resample_num, split_token)
 
 
 
