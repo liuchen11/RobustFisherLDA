@@ -66,3 +66,10 @@ def F_norm(matrix):
 	squared_sum = np.sum(squared)
 	return math.sqrt(squared_sum)
 
+def M_norm(matrix, vector):
+	'''
+	calculate the M-norm of a matrix i.e \sqrt{v.T * M * v}
+	'''
+	squared = np.dot(vector.T, np.dot(matrix, vector))
+	return math.sqrt(squared[0][0])
+

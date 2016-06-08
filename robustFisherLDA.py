@@ -28,9 +28,14 @@ def estimate(trainX, trainY, resample_num):
 
 	sample_pos_means_cov = np.cov(np.array(sample_pos_means).T)
 	sample_neg_means_cov = np.cov(np.array(sample_neg_means).T)
-
-	P_pos = np.linalg.inv(sample_pos_means_cov) / len(trainX)
-	P_neg = np.linalg.inv(sample_neg_means_cov) / len(trainX)
+	print sample_pos_means_cov
+	print sample_neg_means_cov
+	np.linalg.cholesky(sample_pos_means_cov+ np.eye(sample_pos_means_cov.shape[0]) * 1e-8)
+	np.linalg.cholesky(sample_neg_means_cov+ np.eye(sample_neg_means_cov.shape[0]) * 1e-8)
+	P_pos = np.linalg.inv(sample_pos_means_cov + np.eye(sample_pos_means_cov.shape[0]) * 1e-8) / len(trainX)
+	P_neg = np.linalg.inv(sample_neg_means_cov + np.eye(sample_pos_means_cov.shape[0]) * 1e-8) / len(trainX)
+	np.linalg.cholesky(P_pos+ np.eye(sample_neg_means_cov.shape[0]) * 1e-3)
+	np.linalg.cholesky(P_neg+ np.eye(sample_neg_means_cov.shape[0]) * 1e-3)
 
 	rho_pos = 0
 	rho_neg = 0
@@ -66,23 +71,57 @@ if __name__ == '__main__':
 	[pos_mean, pos_P, neg_mean, neg_P, pos_cov, pos_rho, neg_cov, neg_rho] = estimate(trainX, trainY, resample_num)
 
 	M = pos_cov + neg_cov + np.eye(dimension) * (pos_rho + neg_rho)
-	M = np.linalg.inv(M)
-	minus = np.concatenate((np.eye(dimension), -np.eye(dimension)), axis = 1)
-	choose_pos = np.concatenate((np.eye(dimension), np.zeros([dimension, dimension])), axis = 1)
-	choose_neg = np.concatenate((np.zeros([dimension, dimension]), np.eye(dimension)), axis = 1)
+	M0 = np.linalg.inv(M)
+	# minus = np.concatenate((np.eye(dimension), -np.eye(dimension)), axis = 1)
+	# choose_pos = np.concatenate((np.eye(dimension), np.zeros([dimension, dimension])), axis = 1)
+	# choose_neg = np.concatenate((np.zeros([dimension, dimension]), np.eye(dimension)), axis = 1)
 
-	M0 = np.dot(minus.T, np.dot(M, minus))
-	M1 = np.dot(choose_pos.T, np.dot(pos_P, choose_pos))
-	M2 = np.dot(choose_neg.T, np.dot(neg_P, choose_neg))
+	# M0 = np.dot(minus.T, np.dot(M, minus))
+	# M1 = np.dot(choose_pos.T, np.dot(pos_P, choose_pos))
+	# M2 = np.dot(choose_neg.T, np.dot(neg_P, choose_neg))
 
-	sol = QCQP.qcqprel(P = {'P0':matrix(M0), 'b0':None, 'c0':0.0},
-		G = {'P':[matrix(M1), matrix(M2)], 'b':[None] * 2, 'c':[0.0,] * 2,
-		'Peq':[], 'beq':[], 'ceq':[]})
+	# sol = QCQP.qcqprel(P = {'P0':matrix(M0), 'b0':None, 'c0':0.0},
+	# 	G = {'P':[matrix(M1), matrix(M2)], 'b':[None] * 2, 'c':[0.0,] * 2,
+	# 	'Peq':[], 'beq':[], 'ceq':[]})
 
-	sol_array = np.array(sol['RQCQPx'])
-	x_pos_star = sol_array[:dimension]
-	x_neg_star = sol_array[dimension:]
-	w = np.dot(M, x_pos_star - x_neg_star)
+	# sol_array = np.array(sol['RQCQPx'])
+	# x_pos_star = sol_array[:dimension]
+	# x_neg_star = sol_array[dimension:]
+	# w = np.dot(M, x_pos_star - x_neg_star)
+
+	M1 = pos_P
+	M2 = neg_P
+	[train_pos_X, train_neg_X] = util.split(trainX, trainY)
+	k1 = np.mean(train_pos_X, axis = 0).reshape(dimension, 1)
+	k2 = np.mean(train_neg_X, axis = 0).reshape(dimension, 1)
+	k1 = k1 / np.linalg.norm(k1)
+	k2 = k2 / np.linalg.norm(k2)
+	k1_norm = util.M_norm(M1, k1)
+	k2_norm = util.M_norm(M2, k2)
+	x1 = k1 / k1_norm
+	x2 = k2 / k2_norm
+
+	while True:
+		tail = np.dot(M0, x1 - x2)
+		k1_head = (np.eye(dimension) * k1_norm ** 2 - np.dot(np.dot(k1, k1.T), M1.T)) / (k1_norm ** 3)
+		k2_head = - (np.eye(dimension) * k2_norm ** 2 - np.dot(np.dot(k2, k2.T), M2.T)) / (k2_norm ** 3)
+		k1_gradient = np.dot(k1_head, tail)
+		k2_gradient = np.dot(k2_head, tail)
+		k1 -= k1_gradient * 0.1
+		k2 -= k2_gradient * 0.1
+		# k1 /= np.linalg.norm(k1)
+		# k2 /= np.linalg.norm(k2)
+		print  ('%.7f\t %.7f')% (util.M_norm(M0, x1 - x2), np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)))
+		if np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)) < 1e-6:
+			break
+		k1_norm = util.M_norm(M1, k1)
+		k2_norm = util.M_norm(M2, k2)
+		x1 = k1 / k1_norm
+		x2 = k2 / k2_norm
+
+	w = np.dot(M0, x1 - x2)
+
+
 
 
 
