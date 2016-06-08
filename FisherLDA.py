@@ -3,6 +3,7 @@ from sklearn.preprocessing import LabelEncoder
 import numpy as np
 from log import log
 from matplotlib import pyplot as plt
+import util
 
 
 def computeMeanVec(X, y, uniqueClass):
@@ -53,8 +54,8 @@ def computeEigenDecom(S_W, S_B, feature_no):
 
     for i in range(len(eig_vals)):
         eigvec_sc = eig_vecs[:,i].reshape(feature_no, 1)
-        print('\nEigenvector {}: \n{}'.format(i+1, eigvec_sc.real))
-        print('Eigenvalue {:}: {:.2e}'.format(i+1, eig_vals[i].real))
+        log('\nEigenvector {}: \n{}'.format(i+1, eigvec_sc.real))
+        log('Eigenvalue {:}: {:.2e}'.format(i+1, eig_vals[i].real))
 
     for i in range(len(eig_vals)):
         eigv = eig_vecs[:,i].reshape(feature_no, 1)
@@ -76,29 +77,59 @@ def selectFeature(eig_vals, eig_vecs, feature_no):
     # Sort the (eigenvalue, eigenvector) tuples from high to low by the value of eigenvalue
     eig_pairs = sorted(eig_pairs, key=lambda k: k[0], reverse=True)
 
-    print('Eigenvalues in decreasing order:\n')
+    log('Eigenvalues in decreasing order:\n')
     for i in eig_pairs:
-        print(i[0])
+        log(i[0])
 
-    print('Variance explained:\n')
+    log('Variance explained:\n')
     eigv_sum = sum(eig_vals)
     for i,j in enumerate(eig_pairs):
-        print('eigenvalue {0:}: {1:.2%}'.format(i+1, (j[0]/eigv_sum).real))
+        log('eigenvalue {0:}: {1:.2%}'.format(i+1, (j[0]/eigv_sum).real))
 
     # 4.2. Choosing k eigenvectors with the largest eigenvalues - here I choose the first two eigenvalues
     W = np.hstack((eig_pairs[0][1].reshape(feature_no, 1), eig_pairs[1][1].reshape(feature_no, 1)))
-    print('Matrix W:\n', W.real)
+    log('Matrix W: \n{}'.format(W.real))
 
     return W
 
-def transformToNewSpace(X, W, sample_no):
+def transformToNewSpace(X, W, sample_no, mean_vectors, uniqueClass):
     """
     Step 5: Transforming the samples onto the new subspace
     """
     X_trans = X.dot(W)
-    assert X_trans.shape == (sample_no,2), "The matrix is not size of (sample number, 2) dimensional."
+    mean_vecs_trans = []
+    for i in range(len(uniqueClass)):
+        mean_vecs_trans.append(mean_vectors[i].dot(W))
 
-    return X_trans
+    #assert X_trans.shape == (sample_no,2), "The matrix is not size of (sample number, 2) dimensional."
+
+    return X_trans, mean_vecs_trans
+
+def computeErrorRate(X_trans, mean_vecs_trans, y):
+    uniqueClass = np.unique(y)
+    threshold = 0
+    for i in range(len(uniqueClass)):
+        threshold += mean_vecs_trans[i][0]
+    threshold /= len(uniqueClass)
+    log("threshold: {}".format(threshold))
+
+    errors = 0
+    for (i,cl) in enumerate(uniqueClass):
+        label = cl
+        tmp = X_trans[y==label, 0]
+        # compute the error numbers for class i
+        num = len(tmp[tmp<threshold]) if mean_vecs_trans[i][0] > threshold else len(tmp[tmp>=threshold])
+        log("error rate in class {} = {}".format(i, num*1.0/len(tmp)))
+        errors += num
+
+
+    errorRate = errors*1.0/X_trans.shape[0]
+    log("Error rate = {}".format(errorRate))
+    log("Right rate = {}".format(1-errorRate))
+
+    return 1-errorRate
+
+
 
 
 def plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset):
@@ -136,26 +167,31 @@ def plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset):
     plt.tight_layout
     plt.show()
 
-def main_test(dataset='sonar'):
+def mainFisherLDAtest(dataset='sonar', alpha=0.5):
     # load data
     path = dataset + '/' + dataset + '.data'
     load = loader(path)
     [X, y] = load.load()
+    [X, y, testX, testY] = util.divide(X, y, alpha)
+    X = np.array(X)
+    testX = np.array(testX)
+
     feature_no = X.shape[1] # define the dimension
     sample_no = X.shape[0] # define the sample number
-    uniqueClass = np.unique(y) # define how many class in the outputs
 
     # preprocessing
     enc = LabelEncoder()
     label_encoder = enc.fit(y)
     y = label_encoder.transform(y) + 1
-    label_dict = {}
+    uniqueClass = np.unique(y) # define how many class in the outputs
+    label_dict = {}   # define the label name
     for i in range(1, len(uniqueClass)+1):
         label_dict[i] = "Class"+str(i)
     log(label_dict)
 
     # Step 1: Computing the d-dimensional mean vectors for different class
     mean_vectors = computeMeanVec(X, y, uniqueClass)
+
 
     # Step 2: Computing the Scatter Matrices
     S_W = computeWithinScatterMatrices(X, y, feature_no, uniqueClass, mean_vectors)
@@ -168,15 +204,23 @@ def main_test(dataset='sonar'):
     W = selectFeature(eig_vals, eig_vecs, feature_no)
 
     # Step 5: Transforming the samples onto the new subspace
-    X_trans = transformToNewSpace(X, W, sample_no)
+    X_trans, mean_vecs_trans = transformToNewSpace(testX, W, sample_no, mean_vectors, uniqueClass)
+
+
+    # Step 6: compute error rate
+    rightRate = computeErrorRate(X_trans, mean_vecs_trans, testY)
 
 
     # plot
-    plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset)
+    #plot_step_lda(X_trans, testY, label_dict, uniqueClass, dataset)
+
+    return rightRate
 
 
 
 
 if __name__ == "__main__":
-    main_test('ionosphere')
+    dataset = ['ionosphere', 'sonar']  # choose the dataset
+    alpha = 0.6 # choose the train data percentage
+    mainFisherLDAtest(dataset[0], alpha)
 
