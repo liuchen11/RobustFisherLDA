@@ -100,19 +100,21 @@ if __name__ == '__main__':
 	k2_norm = util.M_norm(M2, k2)
 	x1 = k1 / k1_norm
 	x2 = k2 / k2_norm
+	pos_mean = pos_mean.reshape(dimension, 1)
+	neg_mean = neg_mean.reshape(dimension, 1)
 
 	while True:
-		tail = np.dot(M0, x1 - x2)
-		k1_head = (np.eye(dimension) * k1_norm ** 2 - np.dot(np.dot(k1, k1.T), M1.T)) / (k1_norm ** 3)
-		k2_head = - (np.eye(dimension) * k2_norm ** 2 - np.dot(np.dot(k2, k2.T), M2.T)) / (k2_norm ** 3)
+		tail = np.dot(M0, x1 - x2 + pos_mean - neg_mean)
+		k1_head = (np.eye(dimension) * k1_norm ** 2 - np.dot(M1, np.dot(k1, k1.T))) / (k1_norm ** 3)
+		k2_head = - (np.eye(dimension) * k2_norm ** 2 - np.dot(M2, np.dot(k2, k2.T))) / (k2_norm ** 3)
 		k1_gradient = np.dot(k1_head, tail)
 		k2_gradient = np.dot(k2_head, tail)
-		k1 -= k1_gradient * 0.1
-		k2 -= k2_gradient * 0.1
+		k1 -= k1_gradient * 0.01
+		k2 -= k2_gradient * 0.01
 		# k1 /= np.linalg.norm(k1)
 		# k2 /= np.linalg.norm(k2)
-		print  ('%.7f\t %.7f')% (util.M_norm(M0, x1 - x2), np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)))
-		if np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)) < 1e-6:
+		print  ('%.9f\t %.9f\t %.9f\t %.9f \t%.9f')% (util.M_norm(M0, x1 + pos_mean - x2 - neg_mean), np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)), util.M_norm(M1, x1), util.M_norm(M2, x2), util.F_norm(x1 + pos_mean - x2 - neg_mean))
+		if np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)) < 1e-4:
 			break
 		k1_norm = util.M_norm(M1, k1)
 		k2_norm = util.M_norm(M2, k2)
@@ -120,6 +122,8 @@ if __name__ == '__main__':
 		x2 = k2 / k2_norm
 
 	w = np.dot(M0, x1 - x2)
+
+
 
 
 
