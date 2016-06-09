@@ -127,31 +127,34 @@ def computeErrorRate(X_trans, mean_vecs_trans, y):
     log("Error rate = {}".format(errorRate))
     log("Right rate = {}".format(1-errorRate))
 
-    return 1-errorRate
+    return 1-errorRate, threshold
 
 
 
 
-def plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset):
+def plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset, threshold):
 
     ax = plt.subplot(111)
-    for label,marker,color in zip(
-        range(1, len(uniqueClass)+1),('^', 's'),('blue', 'red')):
-
+    for label,marker,color in zip(range(1, len(uniqueClass)+1),('^', 's'),('blue', 'red')):
         plt.scatter(x=X_trans[:,0].real[y == label],
-                y=X_trans[:,1].real[y == label],
-                marker=marker,
-                color=color,
-                alpha=0.5,
-                label=label_dict[label]
-                )
+                    y=X_trans[:,1].real[y == label],
+                    marker=marker,
+                    color=color,
+                    alpha=0.5,
+                    label=label_dict[label]
+                    )
 
     plt.xlabel('LDA1')
     plt.ylabel('LDA2')
 
     leg = plt.legend(loc='upper right', fancybox=True)
     leg.get_frame().set_alpha(0.5)
-    plt.title('LDA: {} data projection onto the first 2 linear discriminants'.format(dataset))
+    plt.title('Fisher LDA: {} data projection onto the first 2 linear discriminants'.format(dataset))
+
+    # plot the the threshold line
+    [bottom, up] = ax.get_ylim()
+    #plt.axvline(x=threshold.real, ymin=bottom, ymax=0.3, linewidth=2, color='k', linestyle='--')
+    plt.axvline(threshold.real, linewidth=2, color='g', linestyle='--')
 
     # hide axis ticks
     plt.tick_params(axis="both", which="both", bottom="off", top="off",
@@ -164,7 +167,7 @@ def plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset):
     ax.spines["left"].set_visible(False)
 
     plt.grid()
-    plt.tight_layout
+    #plt.tight_layout
     plt.show()
 
 def mainFisherLDAtest(dataset='sonar', alpha=0.5):
@@ -183,6 +186,7 @@ def mainFisherLDAtest(dataset='sonar', alpha=0.5):
     enc = LabelEncoder()
     label_encoder = enc.fit(y)
     y = label_encoder.transform(y) + 1
+    testY = label_encoder.transform(testY) + 1
     uniqueClass = np.unique(y) # define how many class in the outputs
     label_dict = {}   # define the label name
     for i in range(1, len(uniqueClass)+1):
@@ -208,13 +212,13 @@ def mainFisherLDAtest(dataset='sonar', alpha=0.5):
 
 
     # Step 6: compute error rate
-    rightRate = computeErrorRate(X_trans, mean_vecs_trans, testY)
+    accuracy, threshold = computeErrorRate(X_trans, mean_vecs_trans, testY)
 
 
     # plot
-    #plot_step_lda(X_trans, testY, label_dict, uniqueClass, dataset)
+    #plot_step_lda(X_trans, testY, label_dict, uniqueClass, dataset, threshold)
 
-    return rightRate
+    return accuracy
 
 
 
@@ -222,5 +226,6 @@ def mainFisherLDAtest(dataset='sonar', alpha=0.5):
 if __name__ == "__main__":
     dataset = ['ionosphere', 'sonar']  # choose the dataset
     alpha = 0.6 # choose the train data percentage
-    mainFisherLDAtest(dataset[0], alpha)
+    accuracy = mainFisherLDAtest(dataset[0], alpha)
+    print accuracy
 
