@@ -2,7 +2,7 @@
 
 This is a collaborative project by Chen LIU and Jun LU.
 
-We use two datasets, both of which are from UCI. They are sonar(<a href="https://archive.ics.uci.edu/ml/machine-learning-databases/undocumented/connectionist-bench/sonar/sonar.all-data">LINK</a>) and ionosphere(<a href="https://archive.ics.uci.edu/ml/machine-learning-databases/ionosphere/ionosphere.data">LINK</a>)
+We use two datasets, both of which are from UCI. They are [sonar](https://archive.ics.uci.edu/ml/machine-learning-databases/undocumented/connectionist-bench/sonar/sonar.all-data) and [ionosphere](https://archive.ics.uci.edu/ml/machine-learning-databases/ionosphere/ionosphere.data)
 
 In addition, in order to solve the QCQP problem raised by robust LDA, we take advantage of the python library cvxopt and scipt writtern by <a href="http://pages.cs.wisc.edu/~kline/qcqp/qcqprel_py">Jeffery Kline</a>
 
