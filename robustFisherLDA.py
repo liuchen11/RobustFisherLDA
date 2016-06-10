@@ -2,6 +2,7 @@ import sys
 import numpy as np
 from cvxopt import matrix
 
+import log
 import load
 import util
 import QCQP
@@ -28,8 +29,8 @@ def estimate(trainX, trainY, resample_num):
 
 	sample_pos_means_cov = np.cov(np.array(sample_pos_means).T)
 	sample_neg_means_cov = np.cov(np.array(sample_neg_means).T)
-	print sample_pos_means_cov
-	print sample_neg_means_cov
+	#log(sample_pos_means_cov)
+	#log(sample_neg_means_cov)
 	np.linalg.cholesky(sample_pos_means_cov+ np.eye(sample_pos_means_cov.shape[0]) * 1e-8)
 	np.linalg.cholesky(sample_neg_means_cov+ np.eye(sample_neg_means_cov.shape[0]) * 1e-8)
 	P_pos = np.linalg.inv(sample_pos_means_cov + np.eye(sample_pos_means_cov.shape[0]) * 1e-8) / len(trainX)
@@ -51,8 +52,8 @@ def estimate(trainX, trainY, resample_num):
 	return [nominal_pos_mean, P_pos, nominal_neg_mean, P_neg,
 		nominal_pos_cov, rho_pos, nominal_neg_cov, rho_neg]
 
-def mainRobustFisherLDA(data_file, alpha, resample_num, split_token):
-
+def mainRobustFisherLDAtest(dataset, alpha, resample_num=100, split_token=','):
+	data_file = dataset + '/' + dataset + '.data'
 	data_loader = load.loader(file_name = data_file, split_token = split_token)
 	[dataX, dataY] = data_loader.load()
 	dimension = data_loader.dimension
@@ -102,7 +103,7 @@ def mainRobustFisherLDA(data_file, alpha, resample_num, split_token):
 		k2_gradient = np.dot(k2_head, tail)
 		k1 -= k1_gradient * 0.01
 		k2 -= k2_gradient * 0.01
-		print  ('%.9f\t %.9f\t %.9f\t %.9f \t%.9f')% (util.M_norm(M0, x1 + pos_mean - x2 - neg_mean), np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)), util.M_norm(M1, x1), util.M_norm(M2, x2), util.F_norm(x1 + pos_mean - x2 - neg_mean))
+		#print ('%.9f\t %.9f\t %.9f\t %.9f \t%.9f')% (util.M_norm(M0, x1 + pos_mean - x2 - neg_mean), np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)), util.M_norm(M1, x1), util.M_norm(M2, x2), util.F_norm(x1 + pos_mean - x2 - neg_mean))
 		if np.linalg.norm(np.concatenate((k1_gradient, k2_gradient), axis = 0)) < 1e-5:
 			break
 		k1_norm = util.M_norm(M1, k1)
@@ -131,20 +132,15 @@ def mainRobustFisherLDA(data_file, alpha, resample_num, split_token):
 		if predict[i] == testY[i]:
 			rightNum += 1
 
-	print 'Right Radio: %.5f'% (float(rightNum)/float(testNum))
+	#print 'Right Radio: %.5f'% (float(rightNum)/float(testNum))
+	return float(rightNum)/float(testNum)
 
 if __name__ == '__main__':
 
-	if len(sys.argv)<3:
-		print 'Usage: python robustFisherLDA.py <dataFile> <alpha> (<resample_num>) (<split_token>)'
-		exit(0)
-
-	data_file = sys.argv[1]
-	alpha = float(sys.argv[2])
-	resample_num = int(sys.argv[3]) if len(sys.argv)>3 else 100
-	split_token = sys.argv[4] if len(sys.argv)>4 else ','
-
-	mainRobustFisherLDA(data_file, alpha, resample_num, split_token)
+	dataset = ['ionosphere', 'sonar']  # choose the dataset
+	dataset = dataset[0]
+	sol = mainRobustFisherLDAtest(dataset, 0.5)
+	print sol
 
 
 

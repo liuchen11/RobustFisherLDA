@@ -106,6 +106,38 @@ def transformToNewSpace(X, W, sample_no, mean_vectors, uniqueClass):
     return X_trans, mean_vecs_trans
 
 def computeErrorRate(X_trans, mean_vecs_trans, y):
+    """
+    Compute the error rate
+    """
+
+    """
+    Project to the second largest eigenvalue
+    """
+    uniqueClass = np.unique(y)
+    threshold = 0
+    for i in range(len(uniqueClass)):
+        threshold += mean_vecs_trans[i][1]
+    threshold /= len(uniqueClass)
+    log("threshold: {}".format(threshold))
+
+    errors = 0
+    for (i,cl) in enumerate(uniqueClass):
+        label = cl
+        tmp = X_trans[y==label, 1]
+        # compute the error numbers for class i
+        num = len(tmp[tmp<threshold]) if mean_vecs_trans[i][1] > threshold else len(tmp[tmp>=threshold])
+        log("error rate in class {} = {}".format(i, num*1.0/len(tmp)))
+        errors += num
+
+
+    errorRate = errors*1.0/X_trans.shape[0]
+    log("Error rate for the second largest eigenvalue = {}".format(errorRate))
+    log("Accuracy for the second largest eigenvalue = {}".format(1-errorRate))
+
+
+    """
+    Project to the largest eigenvalue - and return
+    """
     uniqueClass = np.unique(y)
     threshold = 0
     for i in range(len(uniqueClass)):
@@ -125,7 +157,7 @@ def computeErrorRate(X_trans, mean_vecs_trans, y):
 
     errorRate = errors*1.0/X_trans.shape[0]
     log("Error rate = {}".format(errorRate))
-    log("Right rate = {}".format(1-errorRate))
+    log("Accuracy = {}".format(1-errorRate))
 
     return 1-errorRate, threshold
 
@@ -154,7 +186,7 @@ def plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset, threshold):
     # plot the the threshold line
     [bottom, up] = ax.get_ylim()
     #plt.axvline(x=threshold.real, ymin=bottom, ymax=0.3, linewidth=2, color='k', linestyle='--')
-    plt.axvline(threshold.real, linewidth=2, color='g', linestyle='--')
+    plt.axvline(threshold.real, linewidth=2, color='g')
 
     # hide axis ticks
     plt.tick_params(axis="both", which="both", bottom="off", top="off",
@@ -226,6 +258,7 @@ def mainFisherLDAtest(dataset='sonar', alpha=0.5):
 if __name__ == "__main__":
     dataset = ['ionosphere', 'sonar']  # choose the dataset
     alpha = 0.6 # choose the train data percentage
-    accuracy = mainFisherLDAtest(dataset[0], alpha)
+    accuracy = mainFisherLDAtest(dataset[1], alpha)
     print accuracy
+
 
