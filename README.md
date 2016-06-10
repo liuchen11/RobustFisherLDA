@@ -8,9 +8,11 @@ In addition, in order to solve the QCQP problem raised by robust LDA, we take ad
 
 ## Code Structure
 ```
-|-load.py # load datas
-|-FisherLDA.py # general fisher LDA
+|-load.py            # load datas
+|-FisherLDA.py       # general fisher LDA
+|-robustFisherLDA.py # robust fisher LDA 
+|-mainTest.py        # test on general fisher LDA and robust fisher LDA
 |-log.py  # if you do not want to see so many log infos, please change the DEBUG to False
 |-util.py # util functions
-|-requirements.txt # contains the requried packages
+|-requirements.txt   # contains the requried packages
 ```
